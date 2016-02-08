@@ -5,16 +5,13 @@
  */
 package simplecalculator;
 
-/**
- *
- * @author brandon
- */
 public class calculator extends javax.swing.JFrame {
 
-    public String curOp;
-    public String firstVar;
-    public String secondVar;
+    public String curOp = null;
+    public String firstVar = null;
+    public boolean secondVar;
     public boolean hasNum;
+    public boolean hasDecimal;
     
     
     /**
@@ -22,6 +19,8 @@ public class calculator extends javax.swing.JFrame {
      */
     public calculator() {
         this.hasNum = false;
+        this.hasDecimal = false;
+        this.secondVar = false;
         initComponents();
     }
 
@@ -286,8 +285,24 @@ public class calculator extends javax.swing.JFrame {
     {
         String temp;
         
+        if(this.curOp != null && this.curOp.equals("="))
+        {
+            this.curOp = null;
+            this.firstVar = null;
+            this.hasNum = false;
+            this.hasDecimal = false;
+            this.secondVar = false;
+            this.workspaceTextBox.setText("0");
+        }
+
+        if(this.curOp != null && !this.secondVar)
+        {
+            this.workspaceTextBox.setText("0");
+            this.secondVar = true;
+        }
+        
         temp = this.workspaceTextBox.getText();
-        if(!temp.equals("0") && !this.hasNum)
+        if(!temp.equals("0"))
             this.workspaceTextBox.setText(temp + num);
         else
             this.workspaceTextBox.setText(num);
@@ -296,64 +311,94 @@ public class calculator extends javax.swing.JFrame {
     private void operation(String op)
     {
         String temp;
+        this.hasDecimal = false;
         
-        temp = this.workspaceTextBox.getText();
-        
-        if(this.firstVar == null && !op.equals("%"))
+        if(this.curOp != null && !this.secondVar)
         {
             this.curOp = op;
-            this.firstVar = temp;
-            this.workspaceTextBox.setText("0");
         }
-        else if(op.equals("%"))     // If the operation is % then it only has one operand, so it is a special case
+        else if(this.curOp != null && this.secondVar)
         {
-            this.curOp = "%";       // Set up the operator
-            this.firstVar = this.workspaceTextBox.getText();    // Set  up the operand
             this.firstVar = calculate();
             this.workspaceTextBox.setText(this.firstVar);
-            this.curOp = null;
+            this.curOp = op;
+            this.secondVar = false;
         }
         else
         {
-            this.firstVar = calculate();
-            this.workspaceTextBox.setText(this.firstVar);
-            this.curOp = op;
+            temp = this.workspaceTextBox.getText();
+        
+            if(this.firstVar == null && !op.equals("%"))
+            {
+                this.curOp = op;
+                this.firstVar = temp;
+                this.workspaceTextBox.setText("0");
+            }
+            else if(op.equals("%"))     // If the operation is % then it only has one operand, so it is a special case
+            {
+                this.curOp = "%";       // Set up the operator
+                this.firstVar = this.workspaceTextBox.getText();    // Set  up the operand
+                this.firstVar = calculate();
+                this.workspaceTextBox.setText(this.firstVar);
+                this.curOp = null;
+            }
+            else
+            {
+                this.firstVar = this.workspaceTextBox.getText();
+                this.hasNum = true;
+                this.curOp = op;
+            }
         }
     }
     
     public String calculate()
     {
         double result = 0;
-        
-        switch(this.curOp)
+        this.hasDecimal = false;
+        if (this.workspaceTextBox.getText().equals("."))
         {
-            case "+":
-                result = Double.valueOf(this.firstVar)+Double.valueOf(this.workspaceTextBox.getText());
-                break;
-            case "-":
-                result = Double.valueOf(this.firstVar)-Double.valueOf(this.workspaceTextBox.getText());
-                break;
-            case "/":
-                if(!this.workspaceTextBox.getText().equals("0"))
-                    result = Double.valueOf(this.firstVar)/Double.valueOf(this.workspaceTextBox.getText());
-                else
-                {
-                    this.workspaceTextBox.setText("Warning: Cannot divide by 0.");
-                    try {
-                        Thread.sleep(1000);                 //1000 milliseconds is one second.
-                    } catch(InterruptedException ex) {
-                        Thread.currentThread().interrupt();
-                    }
-                }
-                break;
-            case "*":
-                result = Double.valueOf(this.firstVar)*Double.valueOf(this.workspaceTextBox.getText());
-                break;
-            case "%":
-                result = Double.valueOf(this.firstVar)/100;
-                break;
+            this.workspaceTextBox.setText("0");
+        }
+        if (this.firstVar != null && this.firstVar.equals("."))
+        {
+            this.firstVar = "0";
         }
         
+        if(this.curOp == null)
+        {
+            result = Double.valueOf(this.workspaceTextBox.getText());
+        } 
+        else 
+        {
+            switch (this.curOp) {
+                case "+":
+                    result = Double.valueOf(this.firstVar) + Double.valueOf(this.workspaceTextBox.getText());
+                    break;
+                case "-":
+                    result = Double.valueOf(this.firstVar) - Double.valueOf(this.workspaceTextBox.getText());
+                    break;
+                case "/":
+                    if (!this.workspaceTextBox.getText().equals("0")) {
+                        result = Double.valueOf(this.firstVar) / Double.valueOf(this.workspaceTextBox.getText());
+                    } else {
+                        this.workspaceTextBox.setText("Warning: Cannot divide by 0.");
+                        try {
+                            Thread.sleep(1000);                 //1000 milliseconds is one second.
+                        } catch (InterruptedException ex) {
+                            Thread.currentThread().interrupt();
+                        }
+                    }
+                    break;
+                case "*":
+                    result = Double.valueOf(this.firstVar) * Double.valueOf(this.workspaceTextBox.getText());
+                    break;
+                case "%":
+                    result = Double.valueOf(this.firstVar) / 100;
+                    break;
+            }
+        }
+        this.curOp = null;
+        this.hasNum = true;
         return String.valueOf(result);
     }
     
@@ -376,7 +421,8 @@ public class calculator extends javax.swing.JFrame {
     private void equalButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_equalButtonMouseClicked
         this.firstVar = calculate();
         this.workspaceTextBox.setText(this.firstVar);
-        this.hasNum = true;
+        this.curOp = "=";
+        this.secondVar = false;
     }//GEN-LAST:event_equalButtonMouseClicked
 
     private void divButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_divButtonMouseClicked
@@ -397,7 +443,11 @@ public class calculator extends javax.swing.JFrame {
     }//GEN-LAST:event_fiveButtonMouseClicked
 
     private void dotButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_dotButtonMouseClicked
-        appendNumber(".");
+        if (!this.hasDecimal)
+        {
+            appendNumber(".");
+            this.hasDecimal = true;
+        }
     }//GEN-LAST:event_dotButtonMouseClicked
 
     private void sixButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_sixButtonMouseClicked
@@ -416,8 +466,9 @@ public class calculator extends javax.swing.JFrame {
         this.workspaceTextBox.setText("0");
         this.curOp = null;
         this.firstVar = null;
-        this.secondVar = null;
+        this.secondVar = false;
         this.hasNum = false;
+        this.hasDecimal = false;
     }//GEN-LAST:event_clearButtonMouseClicked
 
     private void signButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_signButtonMouseClicked
